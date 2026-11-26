@@ -1,0 +1,16 @@
+# 빌드 산출물
+build*/
+ios/HangulClockKit/.build/
+ios/HangulClockKit/.swiftpm/
+ios/**/xcuserdata/
+*.xcuserstate
+DerivedData/
+# 시험 때마다 tools/gen_tables.js 가 새로 만드는 정답표
+ios/HangulClockKit/Tests/HangulClockCoreTests/Golden/golden*.txt
+# 내 식별자와 팀 ID (ios/README.md 3절). 올리지 않는다
+ios/Config.local.xcconfig
+# 비밀 값 · 맥
+.env
+.DS_Store
+__pycache__/
+*.pyc

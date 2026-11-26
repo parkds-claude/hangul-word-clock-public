@@ -1,0 +1,9 @@
+// 한글 글자 시계 아이폰: 식별자 · 팀 · 앱 그룹(스펙 I10).
+// 내 식별자와 팀 ID 는 git 에 안 올라가는 Config.local.xcconfig 에 적는다(ios/README.md 3절):
+//   HC_BUNDLE_PREFIX = com.내이름.hangulclock
+//   DEVELOPMENT_TEAM = <팀 ID 10자>
+// 아래 값은 견본이다. Config.local.xcconfig 의 값이 이것을 덮어쓴다.
+HC_BUNDLE_PREFIX = com.example.hangulclock
+HC_APP_GROUP_ID = group.$(HC_BUNDLE_PREFIX)
+DEVELOPMENT_TEAM =
+#include? "Config.local.xcconfig"

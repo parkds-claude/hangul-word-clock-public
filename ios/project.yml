@@ -1,0 +1,92 @@
+# XcodeGen 프로젝트 정의. tools/ios.sh project 가 ios/HangulClock.xcodeproj 를 만든다.
+# 만든 .xcodeproj 도 커밋한다(GitHub 에서 받은 사람이 XcodeGen 없이 연다).
+name: HangulClock
+options:
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+  developmentLanguage: ko
+configFiles:
+  Debug: Config.xcconfig
+  Release: Config.xcconfig
+packages:
+  HangulClockKit:
+    path: HangulClockKit
+targets:
+  HangulClock:
+    type: application
+    platform: iOS
+    sources:
+      - App
+    dependencies:
+      - package: HangulClockKit
+        product: HangulClockCore
+      - package: HangulClockKit
+        product: HangulClockUI
+      - target: HangulClockWidgets
+        embed: true
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: 글자 시계
+        CFBundleDevelopmentRegion: ko
+        UILaunchScreen:
+          UIColorName: ""
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UIRequiresFullScreen: true
+        HCAppGroupID: $(HC_APP_GROUP_ID)
+    entitlements:
+      path: App/HangulClock.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - $(HC_APP_GROUP_ID)
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(HC_BUNDLE_PREFIX)
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        MARKETING_VERSION: "0.1"
+        CURRENT_PROJECT_VERSION: "1"
+        TARGETED_DEVICE_FAMILY: "1"
+        CODE_SIGN_STYLE: Automatic
+        SWIFT_VERSION: "5.0"
+        GENERATE_INFOPLIST_FILE: NO
+  HangulClockWidgets:
+    type: app-extension
+    platform: iOS
+    sources:
+      - Widgets
+    dependencies:
+      - package: HangulClockKit
+        product: HangulClockCore
+      - package: HangulClockKit
+        product: HangulClockUI
+      - sdk: WidgetKit.framework
+      - sdk: SwiftUI.framework
+    info:
+      path: Widgets/Info.plist
+      properties:
+        CFBundleDisplayName: 글자 시계
+        CFBundleDevelopmentRegion: ko
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+        HCAppGroupID: $(HC_APP_GROUP_ID)
+    entitlements:
+      path: Widgets/HangulClockWidgets.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - $(HC_APP_GROUP_ID)
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(HC_BUNDLE_PREFIX).widgets
+        MARKETING_VERSION: "0.1"
+        CURRENT_PROJECT_VERSION: "1"
+        TARGETED_DEVICE_FAMILY: "1"
+        CODE_SIGN_STYLE: Automatic
+        SWIFT_VERSION: "5.0"
+        GENERATE_INFOPLIST_FILE: NO
+schemes:
+  HangulClock:
+    build:
+      targets:
+        HangulClock: all

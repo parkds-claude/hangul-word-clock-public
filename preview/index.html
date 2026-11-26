@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>한글 글자 시계</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Gothic+A1:wght@400;500;700&family=IBM+Plex+Sans+KR:wght@400;500;700&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700&family=Do+Hyeon&text=%EC%95%84%EC%B9%A8%EB%82%AE%EC%A0%80%EB%85%81%EB%B0%A4%EC%97%B4%ED%95%9C%EB%91%90%EC%84%B8%EB%84%A4%EB%8B%A4%EC%97%AC%EC%84%AF%EC%9D%BC%EA%B3%B1%EB%8D%9F%ED%99%89%EC%8B%9C%EC%A0%95%EC%9D%B4%EC%82%BC%EC%82%AC%EC%98%A4%EC%8B%AD%EC%9C%A1%EC%B9%A0%ED%8C%94%EA%B5%AC%EB%B6%84&display=swap" rel="stylesheet">
+<style>
+/* VOICE everyday: 만드는 사람이 모양을 고르는 시험판
+   IDEA 사진 속 참나무 액자 글자 시계가 회분홍 벽에 걸린 모습
+   PICTURE 살아 있는 6×6 글자판(기기와 같은 240×240 캔버스)을 액자에 넣어 크게
+   COLOUR 회분홍 벽, 참나무 액자, 검은 화면, 초록 · 분홍 · 흰 빛 글자
+   TYPE Noto Sans KR 700 제목 + Noto Sans KR 본문
+   LAYOUT 노트북: 왼쪽 시계(붙박이), 오른쪽 조절판. 폰: 제목, 시계, 조절판, 위에 얇은 시각 띠 */
+:root{color-scheme:light dark;--bg:light-dark(#ecd8d1,#1b1514);--ink:light-dark(#2a1d1a,#f2e7e3);--soft:light-dark(#6c5852,#b8a7a1);--panel:light-dark(#f6ebe7,#251e1c);--line:light-dark(#d3bbb3,#3e3230);--accent:light-dark(#a8307a,#f07cc9);--ok:light-dark(#1d7a4c,#5fd99a);--bad:light-dark(#b3261e,#ff8a80)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 "Noto Sans KR",system-ui,sans-serif;overflow-x:clip;margin:0}
+.wrap{max-width:1240px;margin:0 auto;padding-block:clamp(24px,4vw,52px);padding-left:max(5vw,16px,env(safe-area-inset-left,0px));padding-right:max(5vw,16px,env(safe-area-inset-right,0px))}
+h1{font-size:clamp(32px,4.4vw,46px);line-height:1.05;letter-spacing:-.02em;margin:0 0 10px;font-weight:700}
+.lede{margin:0;color:var(--soft);max-width:62ch}
+.layout{display:grid;gap:clamp(20px,3vw,44px);margin-top:clamp(20px,3vw,32px)}
+@media(min-width:680px){.layout{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);align-items:start}.stage{position:sticky;top:16px}}
+.frame{width:min(100%,470px);aspect-ratio:1;margin:0 auto;padding:8.5%;border-radius:5px;background:repeating-linear-gradient(91deg,rgba(255,255,255,.06) 0 2px,transparent 2px 11px),repeating-linear-gradient(89deg,rgba(80,40,10,.07) 0 1px,transparent 1px 17px),linear-gradient(140deg,#d7a36b,#b47b45 55%,#966232);box-shadow:inset 2px 2px 0 rgba(255,255,255,.22),inset -2px -2px 0 rgba(70,35,10,.25),16px 18px 0 -6px rgba(70,35,25,.16)}
+.bezel{width:100%;height:100%;border:7px solid;border-color:#7b4b22 #a46c39 #c08a55 #8c5a2c;background:#0c0a0a}
+canvas{display:block;width:100%;height:100%}
+canvas.px{image-rendering:pixelated}
+.say{font-size:clamp(22px,3vw,28px);font-weight:700;letter-spacing:-.01em;text-align:center;margin:20px 0 4px}
+.note{font-size:14px;color:var(--soft);text-align:center;margin:0 auto;max-width:44ch}
+.mini{display:none}
+@media(max-width:679px){.mini.show{display:flex;position:fixed;top:0;left:0;right:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:calc(8px + env(safe-area-inset-top,0px)) max(5vw,16px,env(safe-area-inset-right,0px)) 8px max(5vw,16px,env(safe-area-inset-left,0px));font-weight:700;gap:10px;align-items:center}}
+.mini canvas{width:44px;height:44px;flex:none;border-radius:3px}
+.controls{display:grid;gap:14px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+.panel h2{font-size:17px;margin:0 0 12px;font-weight:700}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.row+.row{margin-top:10px}
+button{font:inherit;font-size:15px;min-height:44px;padding:0 14px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+button:hover{border-color:var(--accent)}
+button:active{transform:translateY(1px)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip{min-height:36px;font-size:14px;padding:0 10px;font-variant-numeric:tabular-nums}
+.clock{font-size:44px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.02em;line-height:1;margin-right:auto}
+input[type=range]{width:100%;accent-color:var(--accent);height:32px}
+select{font:inherit;font-size:16px;min-height:44px;padding:0 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+label{display:flex;gap:8px;align-items:center}
+.colors{display:grid;grid-template-columns:repeat(auto-fit,minmax(8.5em,1fr));gap:8px}
+.colors label{border:1px solid var(--line);border-radius:8px;padding:6px 10px;background:var(--bg);justify-content:space-between}
+input[type=color]{width:38px;height:30px;border:0;padding:0;background:none;cursor:pointer}
+input[type=checkbox]{width:20px;height:20px;accent-color:var(--accent)}
+.field{display:grid;gap:4px;flex:1 1 9em}
+.field span,.hint{font-size:14px;color:var(--soft)}
+.check{font-size:15px}
+.check b.ok{color:var(--ok)}.check b.bad{color:var(--bad)}
+.board{margin-top:clamp(28px,4vw,48px);display:grid;gap:clamp(20px,3vw,40px)}
+@media(min-width:760px){.board{grid-template-columns:auto minmax(0,1fr);align-items:start}}
+.board h2{font-size:22px;margin:0 0 10px}
+.grid6{display:grid;grid-template-columns:repeat(6,40px);gap:4px;font-size:20px;font-weight:500}
+.grid6 span{height:40px;display:grid;place-items:center;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
+.grid6 span.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+td:first-child{font-variant-numeric:tabular-nums;white-space:nowrap;width:5em}
+ol{padding-left:1.2em;margin:8px 0 0}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<main class="wrap">
+  <div class="mini" id="mini" aria-hidden="true"><canvas id="cvMini" width="240" height="240"></canvas><span id="miniTxt"></span></div>
+  <header>
+    <h1>한글 글자 시계</h1>
+    <p class="lede">Chain Captain 의 정사각형 화면(240×240)에 띄울 6×6 글자판 시험판입니다. 1분마다 그 시각의 글자만 켜집니다. 시각은 한국 시간입니다.</p>
+  </header>
+  <div class="layout">
+    <section class="stage" aria-label="시계 미리보기">
+      <div class="frame"><div class="bezel"><canvas id="cv" width="240" height="240" role="img" aria-label="글자판"></canvas></div></div>
+      <p class="say" id="say">낮 열두 시 십오 분</p>
+      <p class="note">실제 화면은 한 변 약 2.8cm 로, 500원 동전(지름 2.65cm)만 합니다. 한 칸은 약 4.6mm 입니다. 액자는 모양을 보여 주는 예시입니다.</p>
+    </section>
+
+    <section class="controls" aria-label="조절판">
+      <div class="panel">
+        <h2>시각</h2>
+        <div class="row"><span class="clock" id="clock">12:15</span><button id="mNow">지금 시각</button><button id="mPick">직접 고르기</button></div>
+        <div class="row"><input type="range" id="t" min="0" max="1439" step="1" aria-label="하루 중 시각"></div>
+        <div class="row"><button id="minus">−1분</button><button id="plus">+1분</button><button id="play">빨리 돌리기</button>
+          <select id="speed" data-k="speed" aria-label="빠르기"><option value="400">1분 = 0.4초</option><option value="120">1분 = 0.12초</option><option value="30">1분 = 0.03초</option></select></div>
+        <div class="row" id="chips"></div>
+      </div>
+
+      <div class="panel">
+        <h2>글자 색</h2>
+        <div class="colors">
+          <label>아침 <input type="color" data-k="morning"></label>
+          <label>낮 <input type="color" data-k="day"></label>
+          <label>저녁 <input type="color" data-k="evening"></label>
+          <label>밤 <input type="color" data-k="night"></label>
+          <label>숫자 <input type="color" data-k="num"></label>
+          <label>시 · 분 <input type="color" data-k="unit"></label>
+          <label>정오 <input type="color" data-k="noon"></label>
+        </div>
+        <div class="row"><label class="field"><span>꺼진 글자 밝기 <b id="dimV"></b></span><input type="range" min="0" max="45" data-k="dim"></label></div>
+        <div class="row"><label><input type="checkbox" data-k="glow"> 켜진 글자 빛 번짐</label></div>
+        <div class="row"><button data-preset="photo">사진처럼</button><button data-preset="amber">호박색 한 가지</button><button data-preset="white">흰색만</button></div>
+      </div>
+
+      <div class="panel">
+        <h2>글꼴</h2>
+        <div class="row">
+          <label class="field"><span>글꼴</span><select data-k="family">
+            <option>Noto Sans KR</option><option>Gothic A1</option><option>IBM Plex Sans KR</option><option>Gowun Dodum</option><option>Nanum Myeongjo</option><option>Do Hyeon</option></select></label>
+          <label class="field"><span>굵기</span><select data-k="weight"><option value="400">보통</option><option value="500">중간</option><option value="700">굵게</option></select></label>
+        </div>
+        <div class="row"><label class="field"><span>글자 크기 <b id="sizeV"></b> (한 칸 40px)</span><input type="range" min="18" max="36" data-k="size"></label></div>
+        <div class="row"><label><input type="checkbox" data-k="pixel"> 기기 점 그대로 보기 (240×240 을 키움)</label></div>
+        <p class="hint">여섯 글꼴 모두 SIL 열린 글꼴 사용권이라 펌웨어에 넣을 수 있습니다.</p>
+      </div>
+
+      <div class="panel">
+        <h2>규칙</h2>
+        <div class="row">
+          <label class="field"><span>아침 시작</span><select data-k="sMorning" id="sMorning"></select></label>
+          <label class="field"><span>낮 시작</span><select data-k="sDay" id="sDay"></select></label>
+        </div>
+        <div class="row">
+          <label class="field"><span>저녁 시작</span><select data-k="sEvening" id="sEvening"></select></label>
+          <label class="field"><span>밤 시작</span><select data-k="sNight" id="sNight"></select></label>
+        </div>
+        <div class="row"><label><input type="checkbox" data-k="sNoon"> 낮 12시 0분에는 정오만 켜기</label></div>
+        <div class="row"><label><input type="checkbox" data-k="fade"> 글자가 바뀔 때 서서히</label></div>
+        <div class="row"><button id="reset">처음 설정으로</button></div>
+      </div>
+
+      <div class="panel check" id="check"></div>
+    </section>
+  </div>
+
+  <section class="board" aria-label="글자판 읽는 법">
+    <div>
+      <h2>글자판</h2>
+      <div class="grid6" id="grid6"></div>
+    </div>
+    <div>
+      <h2>읽는 차례</h2>
+      <p style="margin:0">아침 · 낮 · 저녁 · 밤 → 몇 시 → 십의 자리 → 십 → 일의 자리 → 분. 켜지는 글자는 늘 왼쪽에서 오른쪽, 위에서 아래 차례로 이어집니다. 0분에는 몇 시까지만 켜집니다. 낮 12시 0분에는 정오만 켜집니다.</p>
+      <p class="hint" style="margin:10px 0 0">36칸에 아침 · 저녁을 넣느라 정각과 입니다를 뺐습니다. 7×7 판으로 키우면 다시 넣을 수 있지만 글자가 40px 에서 34px 로 작아집니다.</p>
+      <div class="scroll" style="margin-top:14px"><table><thead><tr><th>시각</th><th>켜지는 글자</th></tr></thead><tbody id="ex"></tbody></table></div>
+    </div>
+  </section>
+</main>
+
+<script src="clock-core.js"></script>
+<script>
+{
+const H = window.HangulClock;
+const $ = id => document.getElementById(id);
+const KEY = 'hangul-clock-preview-v2';
+const KINDS = ['morning', 'day', 'evening', 'night', 'num', 'unit', 'noon'];
+const one = c => Object.fromEntries(KINDS.map(k => [k, c]));
+const PRESET = {
+  photo: { morning: '#ffc857', day: '#3df29b', evening: '#ff8a5b', night: '#7fa8ff', num: '#ffffff', unit: '#ee6fe0', noon: '#ffd36b' },
+  amber: one('#ffb347'),
+  white: one('#ffffff')
+};
+const DEF = Object.assign({ mode: 'now', t: 735, speed: 120, family: 'Noto Sans KR', weight: '500', size: 27, pixel: false, glow: true, dim: 16, fade: true, sMorning: 5, sDay: 11, sEvening: 18, sNight: 21, sNoon: true }, PRESET.photo);
+let S = Object.assign({}, DEF);
+try { Object.assign(S, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) {}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
+const opts = () => ({ morning: +S.sMorning, day: +S.sDay, evening: +S.sEvening, night: +S.sNight, noon: !!S.sNoon });
+
+const SEOUL = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+function nowHM() {
+  if (S.mode === 'now') { const [h, m] = SEOUL.format(new Date()).split(':').map(Number); return { h, m }; }
+  return { h: Math.floor(S.t / 60), m: S.t % 60 };
+}
+const pad = n => String(n).padStart(2, '0');
+
+const BG = [12, 10, 10], UNLIT = [236, 226, 222];
+const rgb = h => { const n = parseInt(h.slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; };
+const mix = (a, b, p) => a.map((v, i) => v + (b[i] - v) * p);
+function target(h, m) {
+  const t = Array.from({ length: 36 }, () => ({ c: mix(BG, UNLIT, S.dim / 100), on: 0 }));
+  for (const { i, kind } of H.lit(h, m, opts())) t[i] = { c: rgb(S[kind]), on: 1 };
+  return t;
+}
+
+const cv = $('cv'), ctx = cv.getContext('2d'), cm = $('cvMini'), cmx = cm.getContext('2d');
+let cur = null, from = null, to = null, t0 = 0, dur = 0, raf = 0, yOff = 0;
+function paint(c, g, cols, k) {
+  if (c.width !== 240 * k) { c.width = c.height = 240 * k; }
+  g.setTransform(k, 0, 0, k, 0, 0);
+  g.shadowBlur = 0; g.fillStyle = 'rgb(12,10,10)'; g.fillRect(0, 0, 240, 240);
+  g.font = `${S.weight} ${S.size}px "${S.family}", "Noto Sans KR", sans-serif`;
+  g.textAlign = 'center'; g.textBaseline = 'alphabetic';
+  const mt = g.measureText('한'); yOff = (mt.actualBoundingBoxAscent - mt.actualBoundingBoxDescent) / 2;
+  for (let i = 0; i < 36; i++) {
+    const { c: col, on } = cols[i], x = (i % 6) * 40 + 20, y = Math.floor(i / 6) * 40 + 20 + yOff;
+    const s = col.map(Math.round).join(',');
+    g.shadowColor = `rgba(${s},${0.9 * on})`; g.shadowBlur = S.glow ? 7 * on * k : 0;
+    g.fillStyle = `rgb(${s})`; g.fillText(H.CELLS[i], x, y);
+  }
+}
+function draw(cols) {
+  const k = S.pixel ? 1 : Math.max(1, Math.ceil(cv.getBoundingClientRect().width * (window.devicePixelRatio || 1) / 240));
+  cv.classList.toggle('px', !!S.pixel);
+  paint(cv, ctx, cols, k);
+  if (getComputedStyle($('mini')).display !== 'none') paint(cm, cmx, cols, 1);
+}
+function step(now) {
+  const p = dur ? Math.min(1, (now - t0) / dur) : 1;
+  cur = to.map((b, i) => ({ c: mix(from[i].c, b.c, p), on: from[i].on + (b.on - from[i].on) * p }));
+  draw(cur);
+  raf = p < 1 ? requestAnimationFrame(step) : 0;
+}
+function update(instant) {
+  const { h, m } = nowHM();
+  const txt = H.sentence(h, m, opts());
+  $('say').textContent = txt; $('clock').textContent = `${pad(h)}:${pad(m)}`;
+  $('miniTxt').textContent = `${pad(h)}:${pad(m)}  ${txt}`;
+  cv.setAttribute('aria-label', `글자판: ${txt}`);
+  $('t').value = h * 60 + m;
+  const lit = new Set(H.lit(h, m, opts()).map(c => c.i));
+  document.querySelectorAll('#grid6 span').forEach((el, i) => el.classList.toggle('on', lit.has(i)));
+  to = target(h, m);
+  from = cur || to;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  dur = instant || !S.fade || reduce ? 0 : Math.min(600, playing ? S.speed * 0.8 : 600);
+  t0 = performance.now(); cancelAnimationFrame(raf); raf = requestAnimationFrame(step);
+}
+
+// 조절판 연결
+const ctl = [...document.querySelectorAll('[data-k]')];
+// 고를 수 있는 범위가 겹치지 않아 언제나 아침 < 낮 < 저녁 < 밤 이 된다.
+[['sMorning', 3, 8], ['sDay', 9, 13], ['sEvening', 16, 19], ['sNight', 20, 23]].forEach(([id, a, b]) => { for (let h = a; h <= b; h++) $(id).add(new Option(`${h}시`, h)); });
+function sync() {
+  ctl.forEach(el => { const v = S[el.dataset.k]; if (el.type === 'checkbox') el.checked = !!v; else el.value = v; });
+  $('dimV').textContent = S.dim + '%'; $('sizeV').textContent = S.size + 'px';
+  $('mNow').classList.toggle('on', S.mode === 'now'); $('mPick').classList.toggle('on', S.mode !== 'now');
+}
+async function fontReady() { try { await document.fonts.load(`${S.weight} ${S.size}px "${S.family}"`, H.CELLS.join('')); } catch (e) {} }
+ctl.forEach(el => el.addEventListener('input', async () => {
+  const k = el.dataset.k;
+  const isRule = k.startsWith('s') && k !== 'size' && k !== 'speed';
+  S[k] = el.type === 'checkbox' ? el.checked : (el.type === 'range' || isRule || k === 'speed') ? +el.value : el.value;
+  save(); sync();
+  if (k === 'family' || k === 'weight') await fontReady();
+  if (k === 'speed' && playing) { stop(); start(); }
+  if (isRule) renderInfo();
+  cur = null; update(true);
+}));
+document.querySelectorAll('[data-preset]').forEach(b => b.addEventListener('click', () => { Object.assign(S, PRESET[b.dataset.preset]); save(); sync(); update(); }));
+const pick = t => { S.mode = 'pick'; S.t = (t + 1440) % 1440; save(); sync(); update(); };
+$('mNow').onclick = () => { stop(); S.mode = 'now'; save(); sync(); update(); };
+$('mPick').onclick = () => pick(nowHM().h * 60 + nowHM().m);
+$('t').addEventListener('input', e => pick(+e.target.value));
+$('minus').onclick = () => pick(nowHM().h * 60 + nowHM().m - 1);
+$('plus').onclick = () => pick(nowHM().h * 60 + nowHM().m + 1);
+let playing = 0;
+function start() { if (S.mode === 'now') pick(nowHM().h * 60 + nowHM().m); playing = setInterval(() => pick(S.t + 1), S.speed); $('play').textContent = '멈추기'; $('play').classList.add('on'); }
+function stop() { clearInterval(playing); playing = 0; $('play').textContent = '빨리 돌리기'; $('play').classList.remove('on'); }
+$('play').onclick = () => playing ? stop() : start();
+$('chips').innerHTML = [0, 307, 450, 720, 735, 1125, 1270, 1439].map(t => `<button class="chip" data-t="${t}">${pad(Math.floor(t / 60))}:${pad(t % 60)}</button>`).join('');
+$('chips').addEventListener('click', e => { const b = e.target.closest('[data-t]'); if (b) { stop(); pick(+b.dataset.t); } });
+$('reset').onclick = () => { stop(); S = Object.assign({}, DEF); save(); sync(); fontReady().then(() => { cur = null; renderInfo(); update(true); }); };
+
+function renderInfo() {
+  $('grid6').innerHTML = H.CELLS.map(c => `<span>${c}</span>`).join('');
+  $('ex').innerHTML = [0, 307, 450, 540, 665, 720, 735, 1125, 1200, 1270, 1439].map(t => `<tr><td>${pad(Math.floor(t / 60))}:${pad(t % 60)}</td><td>${H.sentence(Math.floor(t / 60), t % 60, opts())}</td></tr>`).join('');
+  const r = H.check(opts());
+  $('check').innerHTML = r.bad.length
+    ? `<h2>하루 검사</h2><b class="bad">틀림 ${r.bad.length}곳</b>: ` + r.bad.slice(0, 5).map(b => `${pad(b.h)}:${pad(b.m)} ${b.got}`).join(', ')
+    : `<h2>하루 검사</h2><b class="ok">통과</b>: 지금 규칙으로 하루 1,440분을 모두 돌려 보았습니다. 켜지는 글자는 모두 읽는 차례대로 놓여 있고, 이어 읽으면 그 시각의 문장과 같습니다.`;
+}
+
+sync(); renderInfo(); update(true);
+fontReady().then(() => { cur = null; update(true); });
+let lastMin = -1;
+setInterval(() => { if (S.mode === 'now' && !playing) { const { m } = nowHM(); if (m !== lastMin) { lastMin = m; update(); } } }, 1000);
+new ResizeObserver(() => { if (cur) draw(cur); }).observe(cv);
+// 폰에서 큰 시계가 화면 밖으로 나가면 위에 얇은 시각 띠를 띄운다.
+const io = new IntersectionObserver(([e]) => { $('mini').classList.toggle('show', !e.isIntersecting); if (cur) draw(cur); });
+io.observe(document.querySelector('.frame'));
+}
+</script>
+
+</body>
+</html>
